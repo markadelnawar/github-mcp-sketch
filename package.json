@@ -1,0 +1,59 @@
+{
+  "name": "github-mcp-sketch",
+  "version": "0.1.0",
+  "description": "MCP proxy in front of the GitHub MCP that returns inferred schemas instead of raw JSON, plus a query_response tool for drilling back into cached values. Built on json-schema-sketch.",
+  "type": "module",
+  "main": "dist/server.js",
+  "bin": {
+    "github-mcp-sketch": "dist/server.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "anthropic",
+    "claude",
+    "claude-code",
+    "github",
+    "github-mcp",
+    "json-schema",
+    "token-efficiency",
+    "llm",
+    "agent"
+  ],
+  "author": "Mark Adel Nawar",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markadelnawar/github-mcp-sketch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/markadelnawar/github-mcp-sketch/issues"
+  },
+  "homepage": "https://github.com/markadelnawar/github-mcp-sketch#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "json-schema-sketch": "^0.1.1",
+    "tiktoken": "^1.0.20",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
