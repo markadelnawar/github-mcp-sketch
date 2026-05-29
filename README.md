@@ -16,15 +16,15 @@ Benchmarked across 13 agentic tasks on [`facebook/react`](https://github.com/fac
 
 Where the win lives — the 13 cases grouped by the shape of response they exercise:
 
-| Response shape | Cases | Δ context | Δ cost |
-|---|---|---|---|
-| Single-object fetches (one issue, one PR) | 2 | +3% | +52% |
-| List endpoints with rich metadata (30+ items, lots of URL/reaction noise) | 3 | **−74%** | **−71%** |
-| Comment-heavy threads (KEP review, long React discussion) | 3 | **−69%** | **−57%** |
-| Multi-step agentic workflows (triage, investigation, drill-down) | 3 | **−40%** | **−27%** |
-| File contents and commit history | 2 | −2% | 0% |
+| Response shape | Cases | Baseline ctx | Δ context | Δ cost |
+|---|---|---|---|---|
+| Single-object fetches (one issue, one PR) | 2 | 34,740 | +3% | +52% |
+| List endpoints with rich metadata (30+ items, lots of URL/reaction noise) | 3 | 222,827 | **−74%** | **−71%** |
+| Comment-heavy threads (KEP review, long React discussion) | 3 | 387,913 | **−69%** | **−57%** |
+| Multi-step agentic workflows (triage, investigation, drill-down) | 3 | 158,329 | **−40%** | **−27%** |
+| File contents and commit history | 2 | 40,327 | −2% | 0% |
 
-The first and last rows are where the proxy doesn't help. On a single issue with ~15 fields, the agent queries back ~11 of them anyway — no noise to skip, and the extra round-trip costs more than it saves. On raw file source, the contents are opaque text — schemas can't compress text. Both were included in the benchmark intentionally so the data isn't cherry-picked.
+The first and last rows are where the proxy doesn't help — but notice they're also the rows where baseline context is already small (~35–40K tokens). A small percentage loss on a small payload barely moves anything in practice. The big absolute numbers are in tiers 2–4 (158K–388K baseline), which is exactly where the proxy's percentage savings translate into 100K+ tokens of headroom in real sessions. Both honest-loss rows were included intentionally so the data isn't cherry-picked.
 
 Full report and reproducible bench: [`json-schema-sketch-bench`](https://github.com/markadelnawar/json-schema-sketch-bench).
 
