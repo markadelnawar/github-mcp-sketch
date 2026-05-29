@@ -120,6 +120,47 @@ claude mcp add github-sketch -e GITHUB_PAT=<new_pat> -- npx github-mcp-sketch
 
 Or edit `~/.claude.json` directly under the `mcpServers.github-sketch.env` block.
 
+## Wire into Codex
+
+Add the server to your Codex config at `~/.codex/config.toml`.
+
+Minimal — just the required PAT:
+
+```toml
+[mcp_servers.github-sketch]
+command = "npx"
+args = ["github-mcp-sketch"]
+
+[mcp_servers.github-sketch.env]
+GITHUB_PAT = "<your_pat>"
+```
+
+With optional variables:
+
+```toml
+[mcp_servers.github-sketch]
+command = "npx"
+args = ["github-mcp-sketch"]
+
+[mcp_servers.github-sketch.env]
+GITHUB_PAT = "<your_pat>"
+CACHE_SIZE = "200"
+METRICS_CSV = "/tmp/github-sketch-metrics.csv"
+```
+
+If you installed the package globally, you can launch the binary directly instead:
+
+```toml
+[mcp_servers.github-sketch]
+command = "github-mcp-sketch"
+args = []
+
+[mcp_servers.github-sketch.env]
+GITHUB_PAT = "<your_pat>"
+```
+
+Restart Codex after editing `~/.codex/config.toml` so the new MCP server is registered. The server should then appear as `github-sketch` and expose the upstream GitHub tools plus `query_response`.
+
 ## Wire into other MCP hosts
 
 The proxy is a standard stdio MCP — anything that speaks MCP can host it. The general pattern:
