@@ -4,6 +4,49 @@ A local MCP server that proxies the [GitHub MCP](https://github.com/github/githu
 
 The point: most GitHub API responses are 80%+ metadata the agent doesn't read. `list_pull_requests` for 30 PRs is ~80KB; the agent usually needs 4–5 fields per PR. Returning a schema first lets the model see the shape and decide what to fetch back.
 
+## Architecture
+
+```mermaid
+flowchart TD
+    Agent["Agent<br/>(Claude Code, Codex, custom SDK app)"]
+    Proxy["github-mcp-sketch<br/>• caches raw upstream JSON<br/>• returns schema + cache_id<br/>• serves query_response"]
+    Upstream["GitHub MCP<br/>api.githubcopilot.com/mcp"]
+
+    Agent -- stdio MCP --> Proxy
+    Proxy -- Streamable HTTPS --> Upstream
+```
+
+The proxy sits between any MCP-speaking agent and GitHub's upstream MCP. Every upstream tool gets forwarded transparently; the proxy intercepts the response, caches the raw JSON in memory, infers a compact schema via [`json-schema-sketch`](https://github.com/markadelnawar/json-schema-sketch), and returns `cache_id + schema` to the agent.
+
+### The query loop
+
+The agent doesn't re-fetch the upstream response to extract additional fields. After the first tool call returns the schema, the agent runs a **query loop** — calling `query_response(cache_id, path)` as many times as it needs against the **locally cached JSON**. No upstream round-trip per query.
+
+```mermaid
+sequenceDiagram
+    participant Agent
+    participant Proxy as github-mcp-sketch
+    participant Upstream as GitHub MCP (upstream)
+
+    Agent->>Proxy: list_issues(...)
+    Proxy->>Upstream: forwards
+    Upstream-->>Proxy: raw JSON (~80KB)
+    Note over Proxy: caches JSON locally
+    Proxy-->>Agent: schema + cache_id (~600B)
+
+    rect rgba(120, 200, 255, 0.15)
+    Note over Agent,Proxy: query loop — no upstream calls
+    Agent->>Proxy: query_response(cache_id, "[*].title")
+    Proxy-->>Agent: extracted titles
+    Agent->>Proxy: query_response(cache_id, "[*].state")
+    Proxy-->>Agent: extracted states
+    Agent->>Proxy: query_response(cache_id, [batch paths])
+    Proxy-->>Agent: { results: { path: values, ... } }
+    end
+```
+
+This is what makes schema-first MCPs efficient. The expensive part — pulling JSON over the network — happens **once** per upstream tool call. The agent's iterative drill-down ("now I need titles", "now I need the closed ones", "now I need the author logins") all runs locally against the cache, and each drill-down only puts the **fields the agent asked for** into the context.
+
 ## What the numbers look like
 
 Benchmarked across 13 agentic tasks on [`facebook/react`](https://github.com/facebook/react) and [`kubernetes/kubernetes`](https://github.com/kubernetes/kubernetes), Anthropic SDK with prompt caching enabled (matching how Claude Code uses the API). N=3 runs per case per side. Sum of medians across all 13 cases:
